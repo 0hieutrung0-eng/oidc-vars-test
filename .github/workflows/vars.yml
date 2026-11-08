@@ -1,0 +1,20 @@
+name: vars-fork-test
+on:
+  pull_request:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: show var and oidc sub
+        run: |
+          echo "TEST_VAR_VALUE=[${{ vars.TEST_VAR }}]"
+          echo "ACTOR=${{ github.actor }} EVENT=${{ github.event_name }}"
+          echo "HEAD_REPO=${{ github.event.pull_request.head.repo.full_name }}"
+          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | python3 -c 'import sys,json;print(json.load(sys.stdin)["value"])')
+          echo "$TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null | python3 -c 'import sys,json;d=json.load(sys.stdin);print("SUB:",d.get("sub"));print("REPO:",d.get("repository"))'
